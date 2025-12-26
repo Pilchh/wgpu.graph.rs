@@ -1,8 +1,6 @@
 use wgpu::{
-    BlendState, Buffer, BufferUsages, ColorTargetState, ColorWrites, Device, FragmentState,
-    MultisampleState, PipelineCompilationOptions, PipelineLayoutDescriptor, PrimitiveState,
-    RenderPass, RenderPipeline, RenderPipelineDescriptor, ShaderModuleDescriptor, ShaderSource,
-    TextureFormat, VertexState,
+    Buffer, BufferUsages, Device, RenderPass, RenderPipeline, ShaderModuleDescriptor, ShaderSource,
+    TextureFormat,
     util::{BufferInitDescriptor, DeviceExt},
 };
 
@@ -11,7 +9,6 @@ use crate::renderer::{pipeline::create_pipeline, vertex::Vertex2D};
 pub struct AxisRenderer {
     pipeline: RenderPipeline,
     vertex_buffer: Buffer,
-    vertex_count: u32,
 }
 
 impl AxisRenderer {
@@ -75,7 +72,6 @@ impl AxisRenderer {
         Self {
             pipeline,
             vertex_buffer,
-            vertex_count: vertices.len() as u32,
         }
     }
 
