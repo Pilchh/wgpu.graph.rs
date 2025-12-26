@@ -8,6 +8,8 @@ use wgpu::{
 };
 use winit::{dpi::PhysicalSize, window::Window};
 
+use crate::renderer::axis::AxisRenderer;
+
 pub struct State {
     window: Arc<Window>,
     device: Device,
@@ -15,6 +17,7 @@ pub struct State {
     size: PhysicalSize<u32>,
     surface: Surface<'static>,
     surface_format: TextureFormat,
+    axis: AxisRenderer,
 }
 
 impl State {
@@ -35,6 +38,8 @@ impl State {
         let cap = surface.get_capabilities(&adapter);
         let surface_format = cap.formats[0];
 
+        let axis = AxisRenderer::new(&device, surface_format);
+
         let state = State {
             window,
             device,
@@ -42,6 +47,7 @@ impl State {
             size,
             surface,
             surface_format,
+            axis,
         };
 
         // Configure surface for the first time
@@ -92,14 +98,14 @@ impl State {
         // Renders a GREEN screen
         let mut encoder = self.device.create_command_encoder(&Default::default());
         // Create the renderpass which will clear the screen.
-        let renderpass = encoder.begin_render_pass(&RenderPassDescriptor {
+        let mut pass = encoder.begin_render_pass(&RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(RenderPassColorAttachment {
                 view: &texture_view,
                 depth_slice: None,
                 resolve_target: None,
                 ops: Operations {
-                    load: LoadOp::Clear(Color::BLUE),
+                    load: LoadOp::Clear(Color::BLACK),
                     store: StoreOp::Store,
                 },
             })],
@@ -109,9 +115,10 @@ impl State {
         });
 
         // If you wanted to call any drawing commands, they would go here.
+        self.axis.draw(&mut pass);
 
         // End the renderpass.
-        drop(renderpass);
+        drop(pass);
 
         // Submit the command in the queue to execute
         self.queue.submit([encoder.finish()]);
