@@ -6,7 +6,7 @@ use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
 };
 
-use crate::renderer::vertex::Vertex2D;
+use crate::renderer::{pipeline::create_pipeline, vertex::Vertex2D};
 
 pub struct AxisRenderer {
     pipeline: RenderPipeline,
@@ -62,42 +62,15 @@ impl AxisRenderer {
             source: ShaderSource::Wgsl(include_str!("shaders/axis.wgsl").into()),
         });
 
-        // Create pipeline layout
-        let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
-            label: Some("Axis Pipeline Layout"),
-            bind_group_layouts: &[],
-            push_constant_ranges: &[],
-        });
-
         // Create pipeline
-        let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
-            label: Some("Axis Pipeline"),
-            layout: Some(&layout),
-            vertex: VertexState {
-                module: &shader,
-                entry_point: Some("vs_main"),
-                buffers: &[Vertex2D::desc()],
-                compilation_options: PipelineCompilationOptions::default(),
-            },
-            fragment: Some(FragmentState {
-                module: &shader,
-                entry_point: Some("fs_main"),
-                targets: &[Some(ColorTargetState {
-                    format,
-                    blend: Some(BlendState::REPLACE),
-                    write_mask: ColorWrites::ALL,
-                })],
-                compilation_options: PipelineCompilationOptions::default(),
-            }),
-            primitive: PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleStrip,
-                ..Default::default()
-            },
-            depth_stencil: None,
-            multisample: MultisampleState::default(),
-            multiview: None,
-            cache: None,
-        });
+        let pipeline = create_pipeline(
+            device,
+            &shader,
+            &[Vertex2D::desc()],
+            format,
+            wgpu::PrimitiveTopology::TriangleStrip,
+            "Axis Pipeline",
+        );
 
         Self {
             pipeline,
