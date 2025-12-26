@@ -1,7 +1,12 @@
 use std::sync::Arc;
 
-use wgpu::{Device, Instance, InstanceDescriptor, Queue, Surface, TextureFormat};
-use winit::{dpi::PhysicalSize, event_loop::OwnedDisplayHandle, window::Window};
+use wgpu::{
+    Color, CompositeAlphaMode, Device, DeviceDescriptor, Instance, InstanceDescriptor, LoadOp,
+    Operations, PresentMode, Queue, RenderPassColorAttachment, RenderPassDescriptor,
+    RequestAdapterOptions, StoreOp, Surface, SurfaceConfiguration, TextureFormat, TextureUsages,
+    TextureViewDescriptor,
+};
+use winit::{dpi::PhysicalSize, window::Window};
 
 pub struct State {
     window: Arc<Window>,
@@ -16,11 +21,11 @@ impl State {
     pub async fn new(window: Arc<Window>) -> State {
         let instance = Instance::new(&InstanceDescriptor::default());
         let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .request_adapter(&RequestAdapterOptions::default())
             .await
             .unwrap();
         let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
+            .request_device(&DeviceDescriptor::default())
             .await
             .unwrap();
 
@@ -50,21 +55,21 @@ impl State {
     }
 
     pub fn configure_surface(&self) {
-        let surface_config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        let surface_config = SurfaceConfiguration {
+            usage: TextureUsages::RENDER_ATTACHMENT,
             format: self.surface_format,
             // Request compatibility with the sRGB-format texture view we‘re going to create later.
             view_formats: vec![self.surface_format.add_srgb_suffix()],
-            alpha_mode: wgpu::CompositeAlphaMode::Auto,
+            alpha_mode: CompositeAlphaMode::Auto,
             width: self.size.width,
             height: self.size.height,
             desired_maximum_frame_latency: 2,
-            present_mode: wgpu::PresentMode::AutoVsync,
+            present_mode: PresentMode::AutoVsync,
         };
         self.surface.configure(&self.device, &surface_config);
     }
 
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
         self.size = new_size;
 
         // reconfigure the surface
@@ -77,27 +82,25 @@ impl State {
             .surface
             .get_current_texture()
             .expect("failed to acquire next swapchain texture");
-        let texture_view = surface_texture
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor {
-                // Without add_srgb_suffix() the image we will be working with
-                // might not be "gamma correct".
-                format: Some(self.surface_format.add_srgb_suffix()),
-                ..Default::default()
-            });
+        let texture_view = surface_texture.texture.create_view(&TextureViewDescriptor {
+            // Without add_srgb_suffix() the image we will be working with
+            // might not be "gamma correct".
+            format: Some(self.surface_format.add_srgb_suffix()),
+            ..Default::default()
+        });
 
         // Renders a GREEN screen
         let mut encoder = self.device.create_command_encoder(&Default::default());
         // Create the renderpass which will clear the screen.
-        let renderpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        let renderpass = encoder.begin_render_pass(&RenderPassDescriptor {
             label: None,
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+            color_attachments: &[Some(RenderPassColorAttachment {
                 view: &texture_view,
                 depth_slice: None,
                 resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color::GREEN),
-                    store: wgpu::StoreOp::Store,
+                ops: Operations {
+                    load: LoadOp::Clear(Color::BLUE),
+                    store: StoreOp::Store,
                 },
             })],
             depth_stencil_attachment: None,

@@ -19,7 +19,7 @@ impl ApplicationHandler for App {
         // Create window object
         let window = Arc::new(
             event_loop
-                .create_window(Window::default_attributes())
+                .create_window(Window::default_attributes().with_title("Graph Calculator"))
                 .unwrap(),
         );
 
